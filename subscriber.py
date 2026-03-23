@@ -13,44 +13,19 @@ def on_connect(client, userdata, flags, reason_code, properties=None):
     print(f"Connected, subscribing to: {TOPIC}")
     client.subscribe(TOPIC)
 
-def parse_timestamp(j):
-    t = j.get("receivedAt", "")
-    if t:
-        return t
-    rx = j.get("rxInfo", [])
-    if isinstance(rx, list) and rx:
-        return rx[0].get("time", "") or rx[0].get("receivedAt", "")
-    return ""
-
 def parse_sf_and_freq(j):
     """Extract spreading factor and frequency from txInfo or rxInfo."""
     sf = None
     freq = None
 
-    # Frequency is usually in txInfo
     tx = j.get("txInfo", {})
     freq = tx.get("frequency") or tx.get("freq")
 
-    # SF is nested in txInfo.modulation.lora.spreadingFactor (ChirpStack v4)
-    # or txInfo.loRaModulationInfo.spreadingFactor (ChirpStack v3)
+
     mod = tx.get("modulation", {})
     lora = mod.get("lora", {})
     sf = lora.get("spreadingFactor")
 
-    if sf is None:
-        sf = tx.get("loRaModulationInfo", {}).get("spreadingFactor")
-
-    # Fallback: check rxInfo (some gateways report DR/SF there)
-    if sf is None or freq is None:
-        rx = j.get("rxInfo", [])
-        if isinstance(rx, list) and rx:
-            first = rx[0]
-            if freq is None:
-                freq = first.get("frequency") or first.get("freq")
-            if sf is None:
-                sf = first.get("spreadingFactor") or first.get("sf")
-
-    return sf, freq
 
 def decode_lht65n(data_bytes):
     if len(data_bytes) < 7:
@@ -79,11 +54,7 @@ def on_message(client, userdata, msg):
     fcnt = j.get("fCnt", j.get("fCntUp", ""))
     data_b64 = j.get("data", "")
     data_bytes = base64.b64decode(data_b64) if data_b64 else b""
-    ts = parse_timestamp(j)
     sf, freq = parse_sf_and_freq(j)
-
-    freq_mhz = f"{freq / 1e6:.3f} MHz" if freq else "unknown"
-    sf_str = f"SF{sf}" if sf else "unknown"
 
     print(f"UP devEui={dev_eui} fcnt={fcnt} payload_hex={data_bytes.hex()} timestamp={ts}")
     print(f"   SF={sf_str}  freq={freq_mhz}")
@@ -100,4 +71,3 @@ def main():
 if __name__ == "__main__":
     main()
 
-# add previous 3 messages for bit-flipping detection
