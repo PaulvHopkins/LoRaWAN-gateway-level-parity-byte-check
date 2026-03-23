@@ -1,4 +1,11 @@
+# LoRaWAN Bit-Flipping Detection using Parity and Gateway Validation
 
+## Overview
+This project implements a lightweight method for detecting bit-flipping attacks in LoRaWAN networks using a parity-based approach. The system captures LoRa packets using SX1276 transceivers, appends a parity byte, simulates bit-flip attacks, and performs validation at the gateway before forwarding data to the network server.
+
+The aim is to demonstrate a low-overhead, real-time integrity check suitable for constrained IoT devices.
+
+---
 =======
 ---
 
