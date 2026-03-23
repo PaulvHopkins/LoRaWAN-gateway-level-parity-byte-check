@@ -8,7 +8,7 @@ from datetime import datetime
 UDP_PORT_receive = 1700
 UDP_PORT_send = 1701
 ip = "172.29.226.146"
-Setup_Mode = True
+Setup_Mode = True# the first uplink will not be on the expected 868.1 mhz as it needs to connect to chirpstack to recieve that data it also will only be 23 bytes in size
 
 PUSH_DATA = 0x00
 PULL_DATA = 0x02
@@ -22,7 +22,7 @@ sock.bind(("0.0.0.0", UDP_PORT_receive))
 sock.settimeout(0.1)
 print(f"Listening on port {UDP_PORT_receive}...")
 
-# Persistent forward socket — stays open so bridge can send ACKs back
+# stays open so bridge can send ACKs back
 fwd_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 fwd_sock.bind(("0.0.0.0", 0))
 fwd_sock.settimeout(0.1)
@@ -71,7 +71,7 @@ def sendChirp(stripped_raw, pkt):
 try:
     while True:
 
-        # ── Uplink: RAK → proxy ───────────────────────────────────────────
+    #recieving from the RAK
         try:
             data, addr = sock.recvfrom(4096)
         except socket.timeout:
@@ -96,7 +96,7 @@ try:
                 for pkt in json_body.get("rxpk", []):
                     raw = base64.b64decode(pkt.get("data", ""))
 
-                    if len(raw) == 23:  # Join Request
+                    if len(raw) == 23:  # Join Request this is th eifrst packet
                         print("  Join Request — forwarding")
                         print_data(pkt)
                         sendChirp(raw, pkt)
@@ -131,7 +131,7 @@ try:
                 fwd_sock.sendto(data, (ip, UDP_PORT_send))
                 print(f"  TX_ACK — relayed to bridge")
 
-        # ── ACKs from bridge ──────────────────────────────────────────────
+        # ACKs from bridge
         try:
             down_data, _ = fwd_sock.recvfrom(4096)
         except socket.timeout:
